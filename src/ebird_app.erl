@@ -1,3 +1,9 @@
+%%----------------------------------------------------------------------
+%% @author Ivan Mic <ivan.micr@gmail.com>
+%% @doc
+%%   Application callback module.
+%% @end
+%%----------------------------------------------------------------------
 -module(ebird_app).
 
 -behaviour(application).
@@ -28,6 +34,7 @@ stop(_State) ->
 simple_test() ->
     ok = application:start(ebird),
     ?assertNot(undefined == whereis(ebird_sup)),
-    application:stop(ebird).
+    ok = ebird:show_status(),
+    ok = application:stop(ebird).
 
 -endif.

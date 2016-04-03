@@ -1,8 +1,16 @@
+%%----------------------------------------------------------------------
+%% @author Ivan Mic <ivan.micr@gmail.com>
+%% @doc
+%%   Module responsible for start/restart of BIRD daemon.
+%% @end
+%%----------------------------------------------------------------------
 -module(ebird_control).
 
 -include("ebird.hrl").
 
--export([start_link/0]).
+-export([start_link/0,
+         restart/0
+        ]).
 
 %% =====================================================================
 %% API functions
@@ -11,6 +19,10 @@
 %% @doc Find or start BIRD daemon.
 %% @end
 %%----------------------------------------------------------------------
+-spec
+start_link() -> ignore | {error, cant_communicate |
+                                 cant_run_bird |
+                                 extract_pid_error()}.
 start_link() ->
   case inspect() of
     {ok, _Pid} ->
@@ -30,6 +42,15 @@ start_link() ->
       Err
   end.
 
+%%----------------------------------------------------------------------
+%% @doc Kill and try to start again BIRD daemon.
+%% @end
+%%----------------------------------------------------------------------
+-spec
+restart() -> {ok, Pid :: os_pid()} | {error, term()}.
+restart() ->
+  {ok, 0}.
+
 %% =====================================================================
 %% Auxiliary functions
 %% =====================================================================
@@ -44,7 +65,7 @@ inspect() -> {ok, Pid :: os_pid()} | {error, cant_communicate |
 inspect() ->
   case ebird_utils:extract_pid() of
     {ok, Pid} ->
-      case ebird_utils:raw_birdc_request("show protocols") of
+      case ebird_utils:raw_request("show protocols") of
         {_, 0} ->
           {ok, Pid};
         _ ->

@@ -2,7 +2,7 @@
  [
   {description, ""},
   {vsn, "1"},
-  {modules, [ebird_control, ebird_utils]},
+  {modules, [ebird_control, ebird_utils, ebird]},
   {registered, [ebird_control]},
   {applications, [
                   kernel,
