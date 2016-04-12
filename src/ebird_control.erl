@@ -29,7 +29,7 @@ start_link() ->
       ?LOG("BIRD daemon found. Application started."),
       ignore;
     {error, no_process} ->
-      case ebird_utils:run_bird() of
+      case run() of
         {ok, _Pid} ->
           ?LOG("BIRD daemon started. Application started."),
           ignore;
@@ -47,9 +47,16 @@ start_link() ->
 %% @end
 %%----------------------------------------------------------------------
 -spec
-restart() -> {ok, Pid :: os_pid()} | {error, term()}.
+restart() -> {ok, os_pid()} | {error, extract_pid_error() |
+                                      cant_run_bird |
+                                      cant_kill_bird}.
 restart() ->
-  {ok, 0}.
+  case ebird_utils:cmd("pkill bird") of
+    {_, 0} ->
+      run();
+    _ ->
+      {error, cant_kill_bird}
+  end.
 
 %% =====================================================================
 %% Auxiliary functions
@@ -63,7 +70,7 @@ restart() ->
 inspect() -> {ok, Pid :: os_pid()} | {error, cant_communicate |
                                              extract_pid_error()}.
 inspect() ->
-  case ebird_utils:extract_pid() of
+  case extract_pid() of
     {ok, Pid} ->
       case ebird_utils:raw_request("show protocols") of
         {_, 0} ->
@@ -73,4 +80,39 @@ inspect() ->
       end;
     Err ->
       Err
+  end.
+
+%%----------------------------------------------------------------------
+%% @doc Determine PID of "bird" process in the system.
+%% @end
+%%----------------------------------------------------------------------
+-spec
+extract_pid() -> {ok, os_pid()} | {error, extract_pid_error()}.
+extract_pid() ->
+  case ebird_utils:cmd("pidof bird") of
+    {PidStr, 0} ->
+      case string:tokens(PidStr, " \n") of
+        [Pid] ->
+          {ok, Pid};
+        _ ->
+          {error, multiple_processes}
+      end;
+    {_, 1} ->
+      {error, no_process};
+    _ ->
+      {error, access_error}
+  end.
+
+%%----------------------------------------------------------------------
+%% @doc Run "bird" process.
+%% @end
+%%----------------------------------------------------------------------
+-spec
+run() -> {ok, os_pid()} | {error, extract_pid_error() | cant_run_bird}.
+run() ->
+  case ebird_utils:cmd(?BIRD) of
+    {_, 0} ->
+      extract_pid();
+    _ ->
+      {error, cant_run_bird}
   end.

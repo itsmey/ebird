@@ -10,8 +10,6 @@
 
 -export([cmd/1,
          cmd/2,
-         extract_pid/0,
-         run_bird/0,
          raw_request/1,
          request/1,
          print_request/1
@@ -51,41 +49,6 @@ cmd (Cmd, Data) ->
     _         -> port_close (Port)
   end,
   Res.
-
-%%----------------------------------------------------------------------
-%% @doc Determine PID of "bird" process in the system.
-%% @end
-%%----------------------------------------------------------------------
--spec
-extract_pid() -> {ok, os_pid()} | {error, extract_pid_error()}.
-extract_pid() ->
-  case cmd("pidof bird") of
-    {PidStr, 0} ->
-      case string:tokens(PidStr, " \n") of
-        [Pid] ->
-          {ok, Pid};
-        _ ->
-          {error, multiple_processes}
-      end;
-    {_, 1} ->
-      {error, no_process};
-    _ ->
-      {error, access_error}
-  end.
-
-%%----------------------------------------------------------------------
-%% @doc Run "bird" process.
-%% @end
-%%----------------------------------------------------------------------
--spec
-run_bird() -> {ok, os_pid()} | {error, extract_pid_error() | cant_run_bird}.
-run_bird() ->
-  case cmd(?BIRD) of
-    {_, 0} ->
-      extract_pid();
-    _ ->
-      {error, cant_run_bird}
-  end.
 
 %%----------------------------------------------------------------------
 %% @doc Communicate with birdc interface. Return value is the same as
