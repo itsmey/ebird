@@ -8,11 +8,13 @@
 
 -export([
           command/1,
-          show_status/0
+          show/1,
+          configure/1,
+          configure/0,
+          check/1,
+          check/0,
+          action/2
         ]).
-
--type show_ospf_param() :: interface | neighbors | state |
-                           tpology   | lsadb.
 
 %% =====================================================================
 %% API functions
@@ -27,43 +29,72 @@ command(Command) ->
   ebird_utils:print_request(Command).
 
 %%----------------------------------------------------------------------
-%% @doc Equivalent of "show status" remote control command.
+%% @doc Perform "show" command.
 %% @end
 %%----------------------------------------------------------------------
 -spec
-show_status() -> ok | {error, term()}.
-show_status() ->
-  command("show status").
+show(string()) -> ok | {error, term()}.
+show(Arg) ->
+  command("show " ++ Arg).
 
+%%----------------------------------------------------------------------
+%% @doc Perform "configure" command.
+%% @end
+%%----------------------------------------------------------------------
 -spec
-show_protocols() -> ok | {error, term()}.
-show_protocols() ->
-  command("show protocols").
-
--spec
-show_protocols_all() -> ok | {error, term()}.
-show_protocols_all() ->
-  command("show protocols all").
-
--spec
-show_ospf(Param     :: ospf_show_param(),
-          Proto     :: string() | all,
-          Interface :: string() | all) -> ok | {error, term()}.
-show_ospf(Param, Proto, Interface) ->
-  ProtoStr = case Proto of all -> ""; _ -> Proto end,
-  InterfaceStr = case Interface of all -> ""; _ -> Interface end,
-  Command = case Param of
-    lsadb -> format("show ospf ~w ~s", [Param, ProtoStr]);
-    _     -> format("show ospf ~w ~s ~"~s~"", [Param, ProtoStr, InterfaceStr]);
+configure(string() | nil) -> ok | {error, term()}.
+configure(Arg) ->
+  Command = case Arg of
+    nil      -> "configure";
+    Filename -> "configure " ++ Filename
   end,
   command(Command).
 
+-spec
+configure() -> ok | {error, term()}.
+configure() ->
+  configure(nil).
+
+%%----------------------------------------------------------------------
+%% @doc Perform "configure check" command.
+%% @end
+%%----------------------------------------------------------------------
+-spec
+check(string() | nil) -> ok | {error, term()}.
+check(Arg) ->
+  Command = case Arg of
+    nil      -> "configure check";
+    Filename -> "configure check" ++ Filename
+  end,
+  command(Command).
+
+-spec
+check() -> ok | {error, term()}.
+check() ->
+  check(nil).
+
+%%----------------------------------------------------------------------
+%% @doc Perform protocol action command.
+%% @end
+%%----------------------------------------------------------------------
+-spec
+action(Action   :: enable | disable | restart | reload,
+       Protocol :: all | {name, string()} | {pattern, string()}) -> ok |
+                                                          {error, term()}.
+action(Action, Protocol) ->
+  ProtocolStr = case Protocol of
+    all                -> "all";
+    {name, Name}       -> Name;
+    {pattern, Pattern} -> "\"" ++ Pattern ++ "\""
+  end,
+  Command = format("~w ~s", [Action, ProtocolStr]),
+  command(Command).
 
 %% =====================================================================
 %% Internal functions
 %% =====================================================================
-cat(Things) ->
-  lists:concat(Things).
+% cat(Things) ->
+%   lists:concat(Things).
 
 format(Format, Args) ->
   lists:flatten(io_lib:format(Format, Args)).
